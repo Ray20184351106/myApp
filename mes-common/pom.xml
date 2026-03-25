@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.mes</groupId>
+        <artifactId>mes</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mes-common</artifactId>
+    <packaging>pom</packaging>
+    <name>mes-common</name>
+    <description>公共模块父工程</description>
+
+    <modules>
+        <module>mes-common-core</module>
+        <module>mes-common-redis</module>
+        <module>mes-common-security</module>
+        <module>mes-common-rabbitmq</module>
+    </modules>
+</project>
