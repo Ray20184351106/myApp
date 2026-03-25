@@ -1,0 +1,48 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: mes-gateway
+  cloud:
+    gateway:
+      routes:
+        # 认证服务
+        - id: mes-auth
+          uri: http://${AUTH_HOST:mes-auth}:${AUTH_PORT:9001}
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # 系统服务
+        - id: mes-system
+          uri: http://${SYSTEM_HOST:mes-system}:${SYSTEM_PORT:9002}
+          predicates:
+            - Path=/api/system/**
+          filters:
+            - StripPrefix=1
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: 6379
+
+# 安全配置 - 白名单
+ignore:
+  whites:
+    - /auth/login
+    - /auth/register
+    - /auth/captcha
+
+# Token 配置
+token:
+  header: Authorization
+  secret: mescloudmescloudmescloudmescloudmescloud
+  expireTime: 120
+  prefix: "Bearer "
+
+# 日志
+logging:
+  level:
+    com.mes: debug
+    org.springframework.cloud.gateway: debug
