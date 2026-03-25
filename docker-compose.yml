@@ -1,51 +1,128 @@
 services:
+  # ==================== 基础设施 ====================
+
   mysql:
     image: mysql:8.0
-    container_name: myapp-mysql
+    container_name: mes-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: myapp
+      MYSQL_DATABASE: mes_auth
     ports:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./sql/init:/docker-entrypoint-initdb.d
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
-      - app-network
+      - mes-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  backend:
-    build: ./backend
-    container_name: myapp-backend
+  redis:
+    image: redis:7-alpine
+    container_name: mes-redis
     ports:
-      - "8081:8081"
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mes-network
+    command: redis-server --appendonly yes
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: mes-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=mes
+      - RABBITMQ_DEFAULT_PASS=mes123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - mes-network
+
+  # ==================== 微服务 ====================
+
+  mes-auth:
+    build:
+      context: .
+      dockerfile: mes-services/mes-auth/Dockerfile
+    container_name: mes-auth
+    ports:
+      - "9001:9001"
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    networks:
+      - mes-network
     depends_on:
       mysql:
         condition: service_healthy
-    networks:
-      - app-network
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/myapp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root123
+      redis:
+        condition: service_started
 
-  frontend:
-    build: ./frontend
-    container_name: myapp-frontend
+  mes-system:
+    build:
+      context: .
+      dockerfile: mes-services/mes-system/Dockerfile
+    container_name: mes-system
+    ports:
+      - "9002:9002"
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    networks:
+      - mes-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  mes-gateway:
+    build:
+      context: .
+      dockerfile: mes-gateway/Dockerfile
+    container_name: mes-gateway
+    ports:
+      - "9000:9000"
+    environment:
+      - AUTH_HOST=mes-auth
+      - AUTH_PORT=9001
+      - SYSTEM_HOST=mes-system
+      - SYSTEM_PORT=9002
+      - REDIS_HOST=redis
+    networks:
+      - mes-network
+    depends_on:
+      - redis
+      - mes-auth
+      - mes-system
+
+  # ==================== 前端 ====================
+
+  mes-frontend:
+    build:
+      context: ./mes-frontend
+      dockerfile: Dockerfile
+    container_name: mes-frontend
     ports:
       - "80:80"
-    depends_on:
-      - backend
     networks:
-      - app-network
+      - mes-network
+    depends_on:
+      - mes-gateway
 
 networks:
-  app-network:
+  mes-network:
     driver: bridge
 
 volumes:
   mysql_data:
+  redis_data:
+  rabbitmq_data:
