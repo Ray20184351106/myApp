@@ -1,0 +1,35 @@
+server:
+  port: 9001
+
+spring:
+  application:
+    name: mes-auth
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3307}/mes_auth?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root123
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: 6379
+
+# MyBatis Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.mes.auth.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# Token 配置
+token:
+  header: Authorization
+  secret: mescloudmescloudmescloudmescloudmescloud
+  expireTime: 120
+  prefix: "Bearer "
+
+# 日志
+logging:
+  level:
+    com.mes: debug
