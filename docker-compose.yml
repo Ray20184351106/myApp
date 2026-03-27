@@ -4,6 +4,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: mes-mysql
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: mes_auth
@@ -24,6 +25,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: mes-redis
+    restart: always
     ports:
       - "6379:6379"
     volumes:
@@ -35,6 +37,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: mes-rabbitmq
+    restart: always
     environment:
       - RABBITMQ_DEFAULT_USER=mes
       - RABBITMQ_DEFAULT_PASS=mes123
@@ -53,6 +56,7 @@ services:
       context: .
       dockerfile: mes-services/mes-auth/Dockerfile
     container_name: mes-auth
+    restart: always
     ports:
       - "9001:9001"
     environment:
@@ -71,6 +75,7 @@ services:
       context: .
       dockerfile: mes-services/mes-system/Dockerfile
     container_name: mes-system
+    restart: always
     ports:
       - "9002:9002"
     environment:
@@ -89,6 +94,7 @@ services:
       context: .
       dockerfile: mes-gateway/Dockerfile
     container_name: mes-gateway
+    restart: always
     ports:
       - "9000:9000"
     environment:
@@ -111,6 +117,7 @@ services:
       context: ./mes-frontend
       dockerfile: Dockerfile
     container_name: mes-frontend
+    restart: always
     ports:
       - "80:80"
     networks:
