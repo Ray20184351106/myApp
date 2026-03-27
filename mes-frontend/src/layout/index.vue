@@ -7,9 +7,12 @@
           <el-menu-item index="/dashboard">
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="/system">
-            <span>系统管理</span>
-          </el-menu-item>
+          <el-sub-menu index="system">
+            <template #title>
+              <span>系统管理</span>
+            </template>
+            <el-menu-item index="/system/user">用户管理</el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </el-aside>
       <el-container>

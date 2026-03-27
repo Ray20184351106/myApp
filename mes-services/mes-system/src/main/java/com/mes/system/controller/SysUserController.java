@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
  * 用户管理控制器
  */
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/system/user")
 public class SysUserController {
 
     @Autowired

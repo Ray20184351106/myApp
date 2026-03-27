@@ -9,6 +9,8 @@ COPY mes-common/mes-common-core/pom.xml mes-common/mes-common-core/
 COPY mes-common/mes-common-redis/pom.xml mes-common/mes-common-redis/
 COPY mes-common/mes-common-security/pom.xml mes-common/mes-common-security/
 COPY mes-common/mes-common-rabbitmq/pom.xml mes-common/mes-common-rabbitmq/
+COPY mes-gateway/pom.xml mes-gateway/
+COPY mes-services/mes-auth/pom.xml mes-services/mes-auth/
 COPY mes-services/mes-system/pom.xml mes-services/mes-system/
 
 # 下载依赖

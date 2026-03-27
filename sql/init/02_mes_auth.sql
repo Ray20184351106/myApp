@@ -78,8 +78,8 @@ CREATE TABLE IF NOT EXISTS `sys_role_menu` (
 -- 初始化数据
 -- 默认密码: 123456 (BCrypt加密)
 INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `status`) VALUES
-(1, 'admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE/TU.qHPjj/T6', '系统管理员', 1),
-(2, 'operator', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE/TU.qHPjj/T6', '操作员', 1);
+(1, 'admin', '$2a$10$LqI04K7rzp5vm4XO5afeN.x.37K0UjwkNJvpMiC2IDxbpBOidfLwa', '系统管理员', 1),
+(2, 'operator', '$2a$10$LqI04K7rzp5vm4XO5afeN.x.37K0UjwkNJvpMiC2IDxbpBOidfLwa', '操作员', 1);
 
 INSERT INTO `sys_role` (`id`, `role_name`, `role_key`, `sort`, `status`) VALUES
 (1, '超级管理员', 'admin', 1, 1),

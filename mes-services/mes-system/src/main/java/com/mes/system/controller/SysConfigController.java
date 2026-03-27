@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
  * 系统配置控制器
  */
 @RestController
-@RequestMapping("/config")
+@RequestMapping("/system/config")
 public class SysConfigController {
 
     @Autowired

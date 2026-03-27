@@ -23,7 +23,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import request from '../utils/request'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -43,16 +43,16 @@ const handleLogin = async () => {
   await formRef.value.validate()
   loading.value = true
   try {
-    const res = await axios.post('/api/auth/login', form)
-    if (res.data.code === 200) {
-      localStorage.setItem('token', res.data.data)
-      ElMessage.success('登录成功')
-      router.push('/')
-    } else {
-      ElMessage.error(res.data.msg || '登录失败')
-    }
+    const res = await request.post('/auth/login', form)
+    console.log('[Login] Response:', res)
+    console.log('[Login] Token:', res.data)
+    localStorage.setItem('token', res.data)
+    console.log('[Login] Token saved to localStorage')
+    ElMessage.success('登录成功')
+    router.push('/')
   } catch (err) {
-    ElMessage.error(err.response?.data?.msg || '登录失败')
+    console.error('[Login] Error:', err)
+    // 错误已在拦截器中处理
   } finally {
     loading.value = false
   }

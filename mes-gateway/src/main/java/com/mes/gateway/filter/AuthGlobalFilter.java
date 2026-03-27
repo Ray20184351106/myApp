@@ -4,12 +4,15 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.mes.common.core.constant.Constants;
 import com.mes.common.core.result.Result;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -34,7 +38,10 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     @Value("${token.prefix:Bearer }")
     private String tokenPrefix;
 
-    private final RedisTemplate redisTemplate;
+    @Value("${token.secret:mescloudmescloudmescloudmescloudmescloud}")
+    private String secret;
+
+    private final StringRedisTemplate redisTemplate;
 
     private static final List<String> WHITE_LIST = List.of(
             "/auth/login",
@@ -42,7 +49,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             "/auth/captcha"
     );
 
-    public AuthGlobalFilter(RedisTemplate redisTemplate) {
+    public AuthGlobalFilter(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -64,8 +71,17 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 验证 token
         try {
-            String userKey = "login_tokens:" + token;
-            Object loginUser = redisTemplate.opsForValue().get(userKey);
+            // 解析 JWT 获取 login_user_key
+            Claims claims = parseToken(token);
+            String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
+
+            if (StrUtil.isEmpty(uuid)) {
+                return unauthorized(exchange, "无效的 Token");
+            }
+
+            // 从 Redis 获取用户信息
+            String userKey = "login_tokens:" + uuid;
+            String loginUser = redisTemplate.opsForValue().get(userKey);
             if (loginUser == null) {
                 return unauthorized(exchange, "登录已过期，请重新登录");
             }
@@ -77,7 +93,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange.mutate().request(newRequest).build());
 
         } catch (Exception e) {
-            return unauthorized(exchange, "认证失败");
+            return unauthorized(exchange, "认证失败: " + e.getMessage());
         }
     }
 
@@ -96,6 +112,15 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             return token.replace(tokenPrefix, "");
         }
         return null;
+    }
+
+    private Claims parseToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {

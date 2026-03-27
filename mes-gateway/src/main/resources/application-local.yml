@@ -1,0 +1,23 @@
+# 本地开发环境配置
+spring:
+  data:
+    redis:
+      host: localhost
+  cloud:
+    gateway:
+      routes:
+        # 认证服务 - 本地直连
+        - id: mes-auth
+          uri: http://localhost:9001
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # 系统服务 - 本地直连
+        - id: mes-system
+          uri: http://localhost:9002
+          predicates:
+            - Path=/api/system/**
+          filters:
+            - StripPrefix=1

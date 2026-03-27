@@ -12,7 +12,7 @@ import java.util.List;
  * 字典管理控制器
  */
 @RestController
-@RequestMapping("/dict")
+@RequestMapping("/system/dict")
 public class SysDictController {
 
     @Autowired

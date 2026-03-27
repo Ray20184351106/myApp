@@ -1,0 +1,23 @@
+# Docker环境配置
+spring:
+  data:
+    redis:
+      host: redis
+  cloud:
+    gateway:
+      routes:
+        # 认证服务 - Docker网络
+        - id: mes-auth
+          uri: http://mes-auth:9001
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # 系统服务 - Docker网络
+        - id: mes-system
+          uri: http://mes-system:9002
+          predicates:
+            - Path=/api/system/**
+          filters:
+            - StripPrefix=1
