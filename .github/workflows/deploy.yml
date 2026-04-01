@@ -6,13 +6,40 @@ on:
       - main
   workflow_dispatch:  # 支持手动触发
 
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+  REGISTRY: ghcr.io
+  # 镜像仓库路径：ghcr.io/ray20184351106/myapp
+  IMAGE_OWNER: ray20184351106
+  IMAGE_REPO: myapp
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      auth-tag: ${{ steps.meta-auth.outputs.tags }}
+      system-tag: ${{ steps.meta-system.outputs.tags }}
+      gateway-tag: ${{ steps.meta-gateway.outputs.tags }}
+      frontend-tag: ${{ steps.meta-frontend.outputs.tags }}
+
     steps:
       - uses: actions/checkout@v4
 
-      # 后端编译
+      # 登录 GitHub Container Registry
+      - name: Log into Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ==================== 后端构建 ====================
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -20,10 +47,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build Backend
-        run: mvn compile -DskipTests -B
+      - name: Build Backend with Maven
+        run: mvn clean package -DskipTests -B
 
-      # 前端构建
+      # ==================== 前端构建 ====================
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -37,26 +65,145 @@ jobs:
           npm ci --registry=https://registry.npmmirror.com
           npm run build
 
+      # ==================== 构建并推送 Docker 镜像 ====================
+
+      # mes-auth
+      - name: Extract metadata for mes-auth
+        id: meta-auth
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_REPO }}/mes-auth
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push mes-auth
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: mes-services/mes-auth/Dockerfile
+          push: true
+          tags: ${{ steps.meta-auth.outputs.tags }}
+          labels: ${{ steps.meta-auth.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # mes-system
+      - name: Extract metadata for mes-system
+        id: meta-system
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_REPO }}/mes-system
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push mes-system
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: mes-services/mes-system/Dockerfile
+          push: true
+          tags: ${{ steps.meta-system.outputs.tags }}
+          labels: ${{ steps.meta-system.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # mes-gateway
+      - name: Extract metadata for mes-gateway
+        id: meta-gateway
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_REPO }}/mes-gateway
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push mes-gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: mes-gateway/Dockerfile
+          push: true
+          tags: ${{ steps.meta-gateway.outputs.tags }}
+          labels: ${{ steps.meta-gateway.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # mes-frontend
+      - name: Extract metadata for mes-frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_REPO }}/mes-frontend
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push mes-frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./mes-frontend
+          file: mes-frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   deploy:
-    needs: build
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 30m
+          command_timeout: 20m
           script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
-            docker-compose down
-            docker-compose up --build -d
+            set -e
 
-      - name: Health Check
-        run: |
-          sleep 60
-          curl -f http://${{ secrets.SERVER_HOST }}:9000/api/auth/login \
-            -X POST -H "Content-Type: application/json" \
-            -d '{"username":"admin","password":"123456"}' || exit 1
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # 拉取最新代码
+            echo "=== Pulling latest code ==="
+            git pull origin main
+
+            # 登录 GHCR
+            echo "=== Logging into GHCR ==="
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # 停止现有服务
+            echo "=== Stopping services ==="
+            docker-compose down
+
+            # 拉取最新镜像（而不是构建）
+            echo "=== Pulling latest images ==="
+            docker-compose pull
+
+            # 启动服务
+            echo "=== Starting services ==="
+            docker-compose up -d
+
+            # 等待服务启动
+            echo "=== Waiting for startup ==="
+            sleep 45
+
+            # 检查容器状态
+            echo "=== Container status ==="
+            docker-compose ps
+
+            # 查看日志
+            echo "=== Recent logs ==="
+            docker-compose logs --tail=20 mes-auth || true
+            docker-compose logs --tail=20 mes-system || true
+            docker-compose logs --tail=20 mes-gateway || true
+            docker-compose logs --tail=20 mes-frontend || true
+
+            # 清理旧镜像
+            echo "=== Cleaning up old images ==="
+            docker image prune -f

@@ -50,8 +50,11 @@ services:
       - mes-network
 
   # ==================== 微服务 ====================
+  # 注意：生产环境部署时，建议使用预构建的 Docker 镜像
+  # 本地开发时可取消 image 配置，使用 build 配置
 
   mes-auth:
+    image: ghcr.io/ray20184351106/myapp/mes-auth:latest
     build:
       context: .
       dockerfile: mes-services/mes-auth/Dockerfile
@@ -71,6 +74,7 @@ services:
         condition: service_started
 
   mes-system:
+    image: ghcr.io/ray20184351106/myapp/mes-system:latest
     build:
       context: .
       dockerfile: mes-services/mes-system/Dockerfile
@@ -90,6 +94,7 @@ services:
         condition: service_started
 
   mes-gateway:
+    image: ghcr.io/ray20184351106/myapp/mes-gateway:latest
     build:
       context: .
       dockerfile: mes-gateway/Dockerfile
@@ -113,6 +118,7 @@ services:
   # ==================== 前端 ====================
 
   mes-frontend:
+    image: ghcr.io/ray20184351106/myapp/mes-frontend:latest
     build:
       context: ./mes-frontend
       dockerfile: Dockerfile
