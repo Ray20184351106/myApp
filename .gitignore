@@ -21,6 +21,3 @@ Thumbs.db
 # Vite
 .vite/
 mes-frontend/dist/
-
-# Maven
-docker/maven/settings.xml
