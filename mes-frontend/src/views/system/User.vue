@@ -1,103 +1,188 @@
 <template>
-  <div class="user-container">
-    <el-card shadow="never">
-      <!-- 搜索栏 -->
-      <el-form :inline="true" :model="queryForm" class="search-form">
-        <el-form-item label="用户名">
-          <el-input v-model="queryForm.username" placeholder="请输入用户名" clearable @keyup.enter="handleQuery" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleQuery">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <!-- 操作按钮 -->
-      <div class="toolbar">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon> 新增
+  <div class="page-container">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">用户管理</h1>
+        <p class="page-desc">管理系统用户账户、权限及状态</p>
+      </div>
+      <div class="header-actions">
+        <el-button type="primary" @click="handleAdd" class="add-btn">
+          <el-icon><Plus /></el-icon>
+          新增用户
         </el-button>
       </div>
+    </div>
 
-      <!-- 用户列表 -->
-      <el-table :data="tableData" v-loading="loading" border stripe>
-        <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="username" label="用户名" min-width="120" />
-        <el-table-column prop="nickname" label="昵称" min-width="120" />
-        <el-table-column prop="email" label="邮箱" min-width="180" />
-        <el-table-column prop="phone" label="手机号" min-width="130" />
-        <el-table-column prop="status" label="状态" width="80">
+    <!-- 搜索过滤区 -->
+    <div class="filter-section">
+      <div class="filter-form">
+        <div class="filter-item">
+          <label>用户名</label>
+          <el-input
+            v-model="queryForm.username"
+            placeholder="请输入用户名"
+            clearable
+            @keyup.enter="handleQuery"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+      </div>
+      <div class="filter-actions">
+        <el-button type="primary" @click="handleQuery">
+          <el-icon><Search /></el-icon>
+          搜索
+        </el-button>
+        <el-button @click="handleReset">
+          <el-icon><Refresh /></el-icon>
+          重置
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="table-section">
+      <el-table
+        :data="tableData"
+        v-loading="loading"
+        class="data-table"
+      >
+        <el-table-column type="index" label="#" width="60" align="center" />
+        <el-table-column label="用户信息" min-width="200">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '正常' : '禁用' }}
-            </el-tag>
+            <div class="user-cell">
+              <el-avatar :size="40" class="user-avatar">
+                {{ row.nickname?.charAt(0) || row.username?.charAt(0) }}
+              </el-avatar>
+              <div class="user-info">
+                <span class="user-name">{{ row.username }}</span>
+                <span class="user-nickname">{{ row.nickname }}</span>
+              </div>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column prop="email" label="邮箱" min-width="180">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
-            <el-button
-              :type="row.status === 1 ? 'warning' : 'success'"
-              link
-              @click="handleToggleStatus(row)"
-            >
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
+            <span class="text-muted">{{ row.email || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="phone" label="手机号" min-width="130">
+          <template #default="{ row }">
+            <span class="text-muted">{{ row.phone || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <span class="status-badge" :class="row.status === 1 ? 'success' : 'danger'">
+              <span class="status-dot"></span>
+              {{ row.status === 1 ? '正常' : '禁用' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="170">
+          <template #default="{ row }">
+            <span class="text-muted">{{ formatTime(row.createTime) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="160" fixed="right" align="center">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-button type="primary" text size="small" @click="handleEdit(row)">
+                <el-icon><Edit /></el-icon>
+              </el-button>
+              <el-button
+                :type="row.status === 1 ? 'warning' : 'success'"
+                text
+                size="small"
+                @click="handleToggleStatus(row)"
+              >
+                <el-icon>
+                  <CircleClose v-if="row.status === 1" />
+                  <CircleCheck v-else />
+                </el-icon>
+              </el-button>
+              <el-button type="danger" text size="small" @click="handleDelete(row)">
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="queryForm.pageNum"
-        v-model:page-size="queryForm.pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="fetchData"
-        @current-change="fetchData"
-      />
-    </el-card>
+      <div class="pagination-section">
+        <span class="total-count">共 {{ total }} 条记录</span>
+        <el-pagination
+          v-model:current-page="queryForm.pageNum"
+          v-model:page-size="queryForm.pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="sizes, prev, pager, next, jumper"
+          @size-change="fetchData"
+          @current-change="fetchData"
+        />
+      </div>
+    </div>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="600px"
-      @close="handleDialogClose"
+      width="520px"
+      :close-on-click-modal="false"
+      class="form-dialog"
     >
-      <el-form :model="formData" :rules="rules" ref="formRef" label-width="80px">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="formData.username" placeholder="请输入用户名" :disabled="isEdit" />
-        </el-form-item>
-        <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="formData.nickname" placeholder="请输入昵称" />
-        </el-form-item>
+      <el-form :model="formData" :rules="rules" ref="formRef" label-position="top" class="form-content">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="用户名" prop="username">
+              <el-input v-model="formData.username" placeholder="请输入用户名" :disabled="isEdit" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="昵称" prop="nickname">
+              <el-input v-model="formData.nickname" placeholder="请输入昵称" />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="密码" :prop="isEdit ? '' : 'password'">
           <el-input v-model="formData.password" type="password" placeholder="请输入密码" show-password />
-          <span v-if="isEdit" class="tip">留空则不修改密码</span>
+          <div v-if="isEdit" class="field-tip">留空则不修改密码</div>
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="formData.email" placeholder="请输入邮箱" />
-        </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="formData.phone" placeholder="请输入手机号" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="formData.status">
-            <el-radio :value="1">正常</el-radio>
-            <el-radio :value="0">禁用</el-radio>
-          </el-radio-group>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="邮箱" prop="email">
+              <el-input v-model="formData.email" placeholder="请输入邮箱" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="手机号" prop="phone">
+              <el-input v-model="formData.phone" placeholder="请输入手机号" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="formData.status">
+                <el-radio :value="1">正常</el-radio>
+                <el-radio :value="0">禁用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
+          {{ isEdit ? '保存修改' : '确认新增' }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -106,7 +191,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Edit, Delete, CircleClose, CircleCheck } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 
 const loading = ref(false)
@@ -156,13 +241,21 @@ const rules = {
   ]
 }
 
-// 获取用户列表
+const formatTime = (time) => {
+  if (!time) return '-'
+  return new Date(time).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 const fetchData = async () => {
   loading.value = true
   try {
-    console.log('queryForm',queryForm)
     const res = await request.get('/system/user/list', { params: queryForm })
-    console.log('res',res)
     if (res.code === 200) {
       tableData.value = res.data.list
       total.value = res.data.total
@@ -174,20 +267,17 @@ const fetchData = async () => {
   }
 }
 
-// 搜索
 const handleQuery = () => {
   queryForm.pageNum = 1
   fetchData()
 }
 
-// 重置
 const handleReset = () => {
   queryForm.username = ''
   queryForm.pageNum = 1
   fetchData()
 }
 
-// 新增
 const handleAdd = () => {
   Object.assign(formData, {
     id: null,
@@ -202,7 +292,6 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-// 编辑
 const handleEdit = async (row) => {
   try {
     const res = await request.get(`/system/user/${row.id}`)
@@ -216,7 +305,6 @@ const handleEdit = async (row) => {
   }
 }
 
-// 删除
 const handleDelete = (row) => {
   ElMessageBox.confirm('确定要删除该用户吗？', '提示', {
     confirmButtonText: '确定',
@@ -235,7 +323,6 @@ const handleDelete = (row) => {
   }).catch(() => {})
 }
 
-// 切换状态
 const handleToggleStatus = async (row) => {
   const newStatus = row.status === 1 ? 0 : 1
   const statusText = newStatus === 1 ? '启用' : '禁用'
@@ -253,7 +340,6 @@ const handleToggleStatus = async (row) => {
   }
 }
 
-// 提交表单
 const handleSubmit = async () => {
   await formRef.value.validate()
   submitLoading.value = true
@@ -277,32 +363,233 @@ const handleSubmit = async () => {
   }
 }
 
-// 关闭对话框
-const handleDialogClose = () => {
-  formRef.value?.resetFields()
-}
-
 onMounted(() => {
   fetchData()
 })
 </script>
 
 <style scoped>
-.user-container {
+/* ===== 页面容器 ===== */
+.page-container {
+  padding: 0;
+}
+
+/* ===== 页面标题 ===== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mes-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.page-desc {
+  font-size: 14px;
+  color: var(--mes-text-secondary);
+  margin: 0;
+}
+
+.add-btn {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* ===== 搜索过滤区 ===== */
+.filter-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  margin-bottom: 20px;
   padding: 20px;
+  background: var(--mes-bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--mes-border);
 }
-.search-form {
-  margin-bottom: 20px;
+
+.filter-form {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
 }
-.toolbar {
-  margin-bottom: 20px;
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.el-pagination {
-  margin-top: 20px;
-  justify-content: flex-end;
+
+.filter-item label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mes-text-secondary);
 }
-.tip {
+
+.filter-item .el-input {
+  width: 240px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ===== 表格区域 ===== */
+.table-section {
+  background: var(--mes-bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--mes-border);
+  overflow: hidden;
+}
+
+.data-table {
+  --el-table-border-color: var(--mes-border);
+}
+
+/* 用户信息单元格 */
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, var(--mes-primary) 0%, var(--mes-accent) 100%);
+  color: #fff;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--mes-text-primary);
+}
+
+.user-nickname {
   font-size: 12px;
-  color: #999;
+  color: var(--mes-text-secondary);
+}
+
+.text-muted {
+  color: var(--mes-text-secondary);
+}
+
+/* 状态徽章 */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.success {
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--mes-success);
+}
+
+.status-badge.danger {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--mes-danger);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.action-buttons .el-button {
+  padding: 6px 8px;
+}
+
+/* ===== 分页 ===== */
+.pagination-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid var(--mes-border);
+}
+
+.total-count {
+  font-size: 13px;
+  color: var(--mes-text-secondary);
+}
+
+/* ===== 对话框 ===== */
+.form-dialog :deep(.el-dialog__header) {
+  padding: 20px 24px 0;
+  border-bottom: none;
+}
+
+.form-dialog :deep(.el-dialog__body) {
+  padding: 20px 24px;
+}
+
+.form-dialog :deep(.el-dialog__footer) {
+  padding: 0 24px 20px;
+  border-top: none;
+}
+
+.form-content :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: var(--mes-text-primary);
+}
+
+.field-tip {
+  font-size: 12px;
+  color: var(--mes-text-muted);
+  margin-top: 4px;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .filter-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-form {
+    flex-direction: column;
+  }
+
+  .filter-item .el-input {
+    width: 100%;
+  }
+
+  .pagination-section {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 </style>
