@@ -272,40 +272,73 @@ const handleCommand = (command) => {
   width: 100%;
 }
 
+/* 未激活菜单项 - 柔和的灰蓝色 */
 :deep(.el-menu-item),
 :deep(.el-sub-menu__title) {
-  color: var(--sidebar-text);
+  color: #94a3b8;
   height: 48px;
   line-height: 48px;
   margin: 4px 12px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 悬停效果 - 渐亮 */
 :deep(.el-menu-item:hover),
 :deep(.el-sub-menu__title:hover) {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--sidebar-active);
+  background: rgba(6, 182, 212, 0.12);
+  color: #e2e8f0;
 }
 
+/* 悬停时图标颜色 */
+:deep(.el-menu-item:hover .el-icon),
+:deep(.el-sub-menu__title:hover .el-icon) {
+  color: var(--accent-color);
+}
+
+/* 激活菜单项 - 青色渐变高亮 */
 :deep(.el-menu-item.is-active) {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.4);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(6, 182, 212, 0.08) 100%);
+  color: #22d3ee;
+  border-left: 3px solid var(--accent-color);
+  margin-left: 12px;
+  padding-left: 17px;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
 }
 
 :deep(.el-menu-item.is-active .el-icon) {
-  color: #fff;
+  color: #22d3ee;
 }
 
+/* 子菜单项样式 */
 :deep(.el-sub-menu .el-menu-item) {
   padding-left: 52px !important;
   height: 42px;
   line-height: 42px;
+  font-size: 13px;
 }
 
-:deep(.el-sub-menu.is-active > .el-sub-menu__title) {
+/* 展开的子菜单标题 - 青色强调 */
+:deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
+  color: #e2e8f0;
+}
+
+:deep(.el-sub-menu.is-opened > .el-sub-menu__title .el-icon) {
   color: var(--accent-color);
+}
+
+/* 激活的子菜单标题 */
+:deep(.el-sub-menu.is-active > .el-sub-menu__title) {
+  color: #22d3ee;
+}
+
+:deep(.el-sub-menu.is-active > .el-sub-menu__title .el-icon) {
+  color: #22d3ee;
+}
+
+/* 子菜单展开后的背景 */
+:deep(.el-sub-menu .el-menu) {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 /* 折叠按钮 */
