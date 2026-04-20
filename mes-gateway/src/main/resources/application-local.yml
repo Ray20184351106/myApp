@@ -6,16 +6,16 @@ spring:
   cloud:
     gateway:
       routes:
-        # 认证服务 - 本地直连 (包含用户管理接口)
-        # 注意：必须放在 mes-system 前面，因为 /api/system/user/** 比 /api/system/** 更具体
+        # 认证服务 - 本地直连 (包含用户、角色、菜单管理接口)
+        # 注意：必须放在 mes-system 前面，更具体的路径优先匹配
         - id: mes-auth
           uri: http://localhost:9001
           predicates:
-            - Path=/api/auth/**,/api/system/user/**
+            - Path=/api/auth/**,/api/system/user/**,/api/system/role/**,/api/system/menu/**
           filters:
             - StripPrefix=1
 
-        # 系统服务 - 本地直连 (排除用户管理)
+        # 系统服务 - 本地直连 (其他系统接口)
         - id: mes-system
           uri: http://localhost:9002
           predicates:
