@@ -9,15 +9,15 @@ spring:
   cloud:
     gateway:
       routes:
-        # 认证服务
+        # 认证服务 (包含用户管理接口) - 必须放在前面，优先匹配
         - id: mes-auth
           uri: lb://mes-auth
           predicates:
-            - Path=/api/auth/**
+            - Path=/api/auth/**,/api/system/user/**
           filters:
             - StripPrefix=1
 
-        # 系统服务
+        # 系统服务 (排除用户管理) - 放在后面
         - id: mes-system
           uri: lb://mes-system
           predicates:

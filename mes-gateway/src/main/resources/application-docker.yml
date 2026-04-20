@@ -6,15 +6,15 @@ spring:
   cloud:
     gateway:
       routes:
-        # 认证服务 - Docker网络
+        # 认证服务 - Docker网络 (包含用户管理接口)
         - id: mes-auth
           uri: http://mes-auth:9001
           predicates:
-            - Path=/api/auth/**
+            - Path=/api/auth/**,/api/system/user/**
           filters:
             - StripPrefix=1
 
-        # 系统服务 - Docker网络
+        # 系统服务 - Docker网络 (排除用户管理)
         - id: mes-system
           uri: http://mes-system:9002
           predicates:
