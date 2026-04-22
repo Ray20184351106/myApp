@@ -26,29 +26,41 @@
           router
           class="sidebar-menu"
         >
+          <!-- 控制台（固定） -->
           <el-menu-item index="/dashboard">
             <el-icon><Odometer /></el-icon>
             <template #title>控制台</template>
           </el-menu-item>
 
-          <el-sub-menu index="system">
-            <template #title>
-              <el-icon><Setting /></el-icon>
-              <span>系统管理</span>
-            </template>
-            <el-menu-item index="/system/user" v-if="hasPermission('system:user:list')">
-              <el-icon><User /></el-icon>
-              <span>用户管理</span>
+          <!-- 动态菜单 -->
+          <template v-for="menu in menuList" :key="menu.id">
+            <!-- 有子菜单的情况 -->
+            <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="String(menu.id)">
+              <template #title>
+                <el-icon>
+                  <component :is="getIconComponent(menu.icon)" />
+                </el-icon>
+                <span>{{ menu.menuName }}</span>
+              </template>
+              <el-menu-item
+                v-for="child in menu.children"
+                :key="child.id"
+                :index="child.path"
+              >
+                <el-icon>
+                  <component :is="getIconComponent(child.icon)" />
+                </el-icon>
+                <span>{{ child.menuName }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+            <!-- 无子菜单的情况 -->
+            <el-menu-item v-else :index="menu.path">
+              <el-icon>
+                <component :is="getIconComponent(menu.icon)" />
+              </el-icon>
+              <template #title>{{ menu.menuName }}</template>
             </el-menu-item>
-            <el-menu-item index="/system/role" v-if="hasPermission('system:role:list')">
-              <el-icon><UserFilled /></el-icon>
-              <span>角色管理</span>
-            </el-menu-item>
-            <el-menu-item index="/system/menu" v-if="hasPermission('system:menu:list')">
-              <el-icon><Menu /></el-icon>
-              <span>菜单管理</span>
-            </el-menu-item>
-          </el-sub-menu>
+          </template>
         </el-menu>
 
         <!-- 折叠按钮 -->
@@ -129,6 +141,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import {
   Odometer, Setting, User, UserFilled, Menu,
   Fold, Expand, Location, Bell, ArrowDown, SwitchButton
@@ -151,24 +164,16 @@ const userRole = computed(() => {
   return roles[0] || '普通用户'
 })
 
-// 菜单数据
-const menuItems = [
-  {
-    index: '/dashboard',
-    icon: Odometer,
-    title: '控制台'
-  },
-  {
-    index: 'system',
-    icon: Setting,
-    title: '系统管理',
-    children: [
-      { index: '/system/user', icon: User, title: '用户管理', perm: 'system:user:list' },
-      { index: '/system/role', icon: UserFilled, title: '角色管理', perm: 'system:role:list' },
-      { index: '/system/menu', icon: Menu, title: '菜单管理', perm: 'system:menu:list' }
-    ]
-  }
-]
+// 动态菜单数据
+const menuList = ref([])
+
+// 获取图标组件
+const getIconComponent = (iconName) => {
+  if (!iconName) return Setting
+  // 图标名称转换：setting -> Setting, user -> User
+  const pascalName = iconName.charAt(0).toUpperCase() + iconName.slice(1)
+  return ElementPlusIconsVue[pascalName] || Setting
+}
 
 // 检查权限
 const hasPermission = (perm) => {
@@ -178,23 +183,38 @@ const hasPermission = (perm) => {
   return permissions.includes(perm)
 }
 
-// 过滤有权限的菜单
-const filteredMenuItems = computed(() => {
-  return menuItems.map(item => {
-    if (item.children) {
-      const children = item.children.filter(child => hasPermission(child.perm))
-      return { ...item, children }
+// 加载菜单
+const loadMenus = async () => {
+  try {
+    const res = await userStore.getMenus()
+    if (res && res.code === 200) {
+      menuList.value = res.data || []
     }
-    return item
-  }).filter(item => {
-    if (item.children) {
-      return item.children.length > 0
-    }
-    return true
-  })
-})
+  } catch (error) {
+    console.error('加载菜单失败', error)
+  }
+}
 
+// 当前页面标题
 const currentPageTitle = computed(() => {
+  // 从菜单中查找当前路由的标题
+  const findTitle = (menus, path) => {
+    for (const menu of menus) {
+      if (menu.path === path) {
+        return menu.menuName
+      }
+      if (menu.children) {
+        const title = findTitle(menu.children, path)
+        if (title) return title
+      }
+    }
+    return null
+  }
+
+  const title = findTitle(menuList.value, route.path)
+  if (title) return title
+
+  // 默认标题
   const titleMap = {
     '/dashboard': '控制台',
     '/system/user': '用户管理',
@@ -216,6 +236,8 @@ onMounted(async () => {
   if (!userStore.userInfo) {
     await userStore.getUserInfo()
   }
+  // 加载菜单
+  await loadMenus()
 })
 </script>
 
