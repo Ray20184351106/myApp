@@ -64,12 +64,30 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="email" label="邮箱" min-width="180">
+        <el-table-column label="角色" min-width="140">
+          <template #default="{ row }">
+            <div class="role-tags" v-if="row.roles && row.roles.length > 0">
+              <el-tag
+                v-for="role in row.roles.slice(0, 2)"
+                :key="role.id"
+                size="small"
+                class="role-tag"
+              >
+                {{ role.roleName }}
+              </el-tag>
+              <el-tag v-if="row.roles.length > 2" size="small" type="info" class="role-tag">
+                +{{ row.roles.length - 2 }}
+              </el-tag>
+            </div>
+            <span v-else class="text-muted">未分配</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="email" label="邮箱" min-width="160">
           <template #default="{ row }">
             <span class="text-muted">{{ row.email || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="phone" label="手机号" min-width="130">
+        <el-table-column prop="phone" label="手机号" min-width="120">
           <template #default="{ row }">
             <span class="text-muted">{{ row.phone || '-' }}</span>
           </template>
@@ -82,29 +100,33 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="170">
+        <el-table-column prop="createTime" label="创建时间" width="160">
           <template #default="{ row }">
             <span class="text-muted">{{ formatTime(row.createTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button type="primary" text size="small" @click="handleEdit(row)">
+              <el-button type="primary" text size="small" @click="handleEdit(row)" title="编辑">
                 <el-icon><Edit /></el-icon>
+              </el-button>
+              <el-button type="success" text size="small" @click="handleAssignRole(row)" title="分配角色">
+                <el-icon><UserFilled /></el-icon>
               </el-button>
               <el-button
                 :type="row.status === 1 ? 'warning' : 'success'"
                 text
                 size="small"
                 @click="handleToggleStatus(row)"
+                :title="row.status === 1 ? '禁用' : '启用'"
               >
                 <el-icon>
                   <CircleClose v-if="row.status === 1" />
                   <CircleCheck v-else />
                 </el-icon>
               </el-button>
-              <el-button type="danger" text size="small" @click="handleDelete(row)">
+              <el-button type="danger" text size="small" @click="handleDelete(row)" title="删除">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>
@@ -185,21 +207,64 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 角色分配对话框 -->
+    <el-dialog
+      v-model="roleDialogVisible"
+      title="分配角色"
+      width="480px"
+      :close-on-click-modal="false"
+      class="form-dialog"
+    >
+      <div class="role-header">
+        <el-icon class="role-icon"><UserFilled /></el-icon>
+        <span>为用户 <strong>{{ currentUserName }}</strong> 分配角色</span>
+      </div>
+      <div class="role-checkbox-group">
+        <el-checkbox-group v-model="selectedRoleIds">
+          <div
+            v-for="role in allRoles"
+            :key="role.id"
+            class="role-checkbox-item"
+            :class="{ checked: selectedRoleIds.includes(role.id) }"
+          >
+            <el-checkbox :value="role.id">
+              <div class="role-info">
+                <span class="role-name">{{ role.roleName }}</span>
+                <span class="role-key">{{ role.roleKey }}</span>
+              </div>
+            </el-checkbox>
+          </div>
+        </el-checkbox-group>
+      </div>
+      <template #footer>
+        <el-button @click="roleDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveRoles" :loading="roleSubmitLoading">
+          保存
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Edit, Delete, CircleClose, CircleCheck } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Edit, Delete, CircleClose, CircleCheck, UserFilled } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 
 const loading = ref(false)
 const submitLoading = ref(false)
+const roleSubmitLoading = ref(false)
 const dialogVisible = ref(false)
+const roleDialogVisible = ref(false)
 const formRef = ref(null)
 const tableData = ref([])
 const total = ref(0)
+const allRoles = ref([])
+const currentUserId = ref(null)
+const currentUserName = ref('')
+const selectedRoleIds = ref([])
 
 const queryForm = reactive({
   username: '',
@@ -257,13 +322,38 @@ const fetchData = async () => {
   try {
     const res = await request.get('/system/user/list', { params: queryForm })
     if (res.code === 200) {
-      tableData.value = res.data.list
+      // 获取每个用户的角色信息
+      const users = res.data.list || []
+      for (const user of users) {
+        try {
+          const roleRes = await request.get(`/system/user/${user.id}/roles`)
+          if (roleRes.code === 200 && roleRes.data) {
+            user.roles = roleRes.data.map(roleId => {
+              return allRoles.value.find(r => r.id === roleId) || { id: roleId, roleName: '未知角色' }
+            })
+          }
+        } catch {
+          user.roles = []
+        }
+      }
+      tableData.value = users
       total.value = res.data.total
     }
   } catch (error) {
     ElMessage.error('获取用户列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const fetchAllRoles = async () => {
+  try {
+    const res = await request.get('/system/role/all')
+    if (res.code === 200) {
+      allRoles.value = res.data || []
+    }
+  } catch (error) {
+    console.error('获取角色列表失败')
   }
 }
 
@@ -340,6 +430,43 @@ const handleToggleStatus = async (row) => {
   }
 }
 
+// 分配角色
+const handleAssignRole = async (row) => {
+  currentUserId.value = row.id
+  currentUserName.value = row.nickname || row.username
+
+  // 获取用户当前角色
+  try {
+    const res = await request.get(`/system/user/${row.id}/roles`)
+    if (res.code === 200) {
+      selectedRoleIds.value = res.data || []
+      roleDialogVisible.value = true
+    }
+  } catch (error) {
+    ElMessage.error('获取用户角色失败')
+  }
+}
+
+// 保存角色分配
+const handleSaveRoles = async () => {
+  roleSubmitLoading.value = true
+  try {
+    const res = await request.put('/system/user/roles', {
+      userId: currentUserId.value,
+      roleIds: selectedRoleIds.value
+    })
+    if (res.code === 200) {
+      ElMessage.success('角色分配成功')
+      roleDialogVisible.value = false
+      fetchData()
+    }
+  } catch (error) {
+    ElMessage.error('角色分配失败')
+  } finally {
+    roleSubmitLoading.value = false
+  }
+}
+
 const handleSubmit = async () => {
   await formRef.value.validate()
   submitLoading.value = true
@@ -364,6 +491,7 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
+  fetchAllRoles()
   fetchData()
 })
 </script>
@@ -483,6 +611,17 @@ onMounted(() => {
   color: var(--mes-text-secondary);
 }
 
+/* 角色标签 */
+.role-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.role-tag {
+  border-radius: 12px;
+}
+
 .text-muted {
   color: var(--mes-text-secondary);
 }
@@ -564,6 +703,72 @@ onMounted(() => {
   font-size: 12px;
   color: var(--mes-text-muted);
   margin-top: 4px;
+}
+
+/* 角色分配对话框 */
+.role-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--mes-bg-secondary);
+  border-radius: 8px;
+}
+
+.role-icon {
+  color: var(--mes-primary);
+  font-size: 20px;
+}
+
+.role-header span {
+  font-size: 14px;
+  color: var(--mes-text-secondary);
+}
+
+.role-header strong {
+  color: var(--mes-primary);
+}
+
+.role-checkbox-group {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.role-checkbox-item {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid var(--mes-border);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.role-checkbox-item:hover {
+  border-color: var(--mes-primary);
+  background: var(--mes-bg-secondary);
+}
+
+.role-checkbox-item.checked {
+  border-color: var(--mes-primary);
+  background: rgba(26, 86, 219, 0.05);
+}
+
+.role-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-name {
+  font-weight: 500;
+  color: var(--mes-text-primary);
+}
+
+.role-key {
+  font-size: 12px;
+  color: var(--mes-text-muted);
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* ===== 响应式 ===== */
