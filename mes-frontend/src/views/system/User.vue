@@ -92,6 +92,12 @@
             <span class="text-muted">{{ row.phone || '-' }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="部门" min-width="120">
+          <template #default="{ row }">
+            <span v-if="row.deptName" class="dept-tag">{{ row.deptName }}</span>
+            <span v-else class="text-muted">未分配</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="{ row }">
             <span class="status-badge" :class="row.status === 1 ? 'success' : 'danger'">
@@ -189,6 +195,19 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="所属部门" prop="deptId">
+              <el-tree-select
+                v-model="formData.deptId"
+                :data="deptOptions"
+                :props="{ label: 'deptName', value: 'id', children: 'children' }"
+                placeholder="请选择部门"
+                check-strictly
+                clearable
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="formData.status">
                 <el-radio :value="1">正常</el-radio>
@@ -263,6 +282,7 @@ const formRef = ref(null)
 const tableData = ref([])
 const total = ref(0)
 const allRoles = ref([])
+const deptOptions = ref([])
 const currentUserId = ref(null)
 const currentUserName = ref('')
 const selectedRoleIds = ref([])
@@ -280,6 +300,7 @@ const formData = reactive({
   password: '',
   email: '',
   phone: '',
+  deptId: null,
   status: 1,
   remark: ''
 })
@@ -358,6 +379,18 @@ const fetchAllRoles = async () => {
   }
 }
 
+// 获取部门树
+const fetchDeptTree = async () => {
+  try {
+    const res = await request.get('/system/dept/tree')
+    if (res.code === 200) {
+      deptOptions.value = res.data || []
+    }
+  } catch (error) {
+    console.error('获取部门列表失败')
+  }
+}
+
 const handleQuery = () => {
   queryForm.pageNum = 1
   fetchData()
@@ -377,6 +410,7 @@ const handleAdd = () => {
     password: '',
     email: '',
     phone: '',
+    deptId: null,
     status: 1,
     remark: ''
   })
@@ -493,6 +527,7 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   fetchAllRoles()
+  fetchDeptTree()
   fetchData()
 })
 </script>
@@ -625,6 +660,18 @@ onMounted(() => {
 
 .text-muted {
   color: var(--mes-text-secondary);
+}
+
+/* 部门标签 */
+.dept-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  background: rgba(26, 86, 219, 0.1);
+  color: var(--mes-primary);
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 /* 状态徽章 */

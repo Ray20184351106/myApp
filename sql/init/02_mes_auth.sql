@@ -68,6 +68,27 @@ CREATE TABLE IF NOT EXISTS `sys_menu` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单表';
 
+-- 部门表
+CREATE TABLE IF NOT EXISTS `sys_dept` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '部门ID',
+    `parent_id` bigint(20) DEFAULT 0 COMMENT '父部门ID',
+    `dept_name` varchar(50) NOT NULL COMMENT '部门名称',
+    `dept_code` varchar(50) NOT NULL COMMENT '部门编码',
+    `sort` int(4) DEFAULT 0 COMMENT '显示顺序',
+    `leader` varchar(50) DEFAULT NULL COMMENT '负责人',
+    `phone` varchar(20) DEFAULT NULL COMMENT '联系电话',
+    `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
+    `status` tinyint(1) DEFAULT 1 COMMENT '状态 0-禁用 1-正常',
+    `create_by` varchar(50) DEFAULT NULL COMMENT '创建者',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` varchar(50) DEFAULT NULL COMMENT '更新者',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+    `deleted` tinyint(1) DEFAULT 0 COMMENT '删除标志',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_dept_code` (`dept_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门表';
+
 -- 角色菜单关联表
 CREATE TABLE IF NOT EXISTS `sys_role_menu` (
     `role_id` bigint(20) NOT NULL COMMENT '角色ID',
@@ -91,12 +112,22 @@ INSERT INTO `sys_user_role` (`user_id`, `role_id`) VALUES
 (1, 1),
 (2, 4);
 
+-- 部门初始化数据
+INSERT INTO `sys_dept` (`id`, `parent_id`, `dept_name`, `dept_code`, `sort`, `leader`, `phone`, `status`) VALUES
+(1, 0, '总公司', 'ROOT', 1, '管理员', '13800000000', 1),
+(2, 1, '生产部', 'PROD', 1, '张三', '13800000001', 1),
+(3, 1, '质量部', 'QC', 2, '李四', '13800000002', 1),
+(4, 1, '设备部', 'EQUIP', 3, '王五', '13800000003', 1),
+(5, 2, '生产一车间', 'PROD01', 1, '赵六', '13800000004', 1),
+(6, 2, '生产二车间', 'PROD02', 2, '钱七', '13800000005', 1);
+
 -- 菜单初始化
 INSERT INTO `sys_menu` (`id`, `menu_name`, `parent_id`, `sort`, `path`, `component`, `menu_type`, `visible`, `status`, `icon`) VALUES
 (1, '系统管理', 0, 1, '/system', NULL, 'M', 1, 1, 'setting'),
 (2, '用户管理', 1, 1, '/system/user', 'system/user/index', 'C', 1, 1, 'user'),
 (3, '角色管理', 1, 2, '/system/role', 'system/role/index', 'C', 1, 1, 'peoples'),
 (4, '菜单管理', 1, 3, '/system/menu', 'system/menu/index', 'C', 1, 1, 'tree-table'),
+(5, '部门管理', 1, 4, '/system/dept', 'system/dept/index', 'C', 1, 1, 'tree'),
 (100, '生产管理', 0, 2, '/production', NULL, 'M', 1, 1, 'build'),
 (101, '工单管理', 100, 1, '/production/order', 'production/order/index', 'C', 1, 1, 'list'),
 (102, '工艺路线', 100, 2, '/production/process', 'production/process/index', 'C', 1, 1, 'tree'),

@@ -110,23 +110,7 @@ INSERT INTO `sys_menu` (`id`, `menu_name`, `parent_id`, `sort`, `path`, `compone
 CREATE DATABASE IF NOT EXISTS mes_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE mes_system;
 
--- 部门表
-CREATE TABLE IF NOT EXISTS `sys_dept` (
-    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '部门ID',
-    `parent_id` bigint(20) DEFAULT 0 COMMENT '父部门ID',
-    `dept_name` varchar(50) NOT NULL COMMENT '部门名称',
-    `sort` int(4) DEFAULT 0 COMMENT '显示顺序',
-    `leader` varchar(50) DEFAULT NULL COMMENT '负责人',
-    `phone` varchar(20) DEFAULT NULL COMMENT '联系电话',
-    `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
-    `status` tinyint(1) DEFAULT 1 COMMENT '状态 0-禁用 1-正常',
-    `create_by` varchar(50) DEFAULT NULL COMMENT '创建者',
-    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_by` varchar(50) DEFAULT NULL COMMENT '更新者',
-    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` tinyint(1) DEFAULT 0 COMMENT '删除标志',
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门表';
+-- 注意: 部门表(sys_dept)已在 mes_auth 库中定义，此处不再重复定义
 
 -- 字典类型表
 CREATE TABLE IF NOT EXISTS `sys_dict_type` (
@@ -197,14 +181,6 @@ CREATE TABLE IF NOT EXISTS `sys_oper_log` (
     `cost_time` bigint(20) DEFAULT 0 COMMENT '消耗时间',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
-
--- 初始化部门数据
-INSERT INTO `sys_dept` (`id`, `parent_id`, `dept_name`, `sort`, `leader`, `status`) VALUES
-(1, 0, 'MES科技', 0, 'CEO', 1),
-(2, 1, '生产部', 1, '张经理', 1),
-(3, 1, '质量部', 2, '李经理', 1),
-(4, 1, '设备部', 3, '王经理', 1),
-(5, 1, 'IT部', 4, '陈经理', 1);
 
 -- 初始化字典类型
 INSERT INTO `sys_dict_type` (`id`, `dict_name`, `dict_type`, `status`) VALUES

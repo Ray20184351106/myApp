@@ -26,12 +26,6 @@
           router
           class="sidebar-menu"
         >
-          <!-- 控制台（固定） -->
-          <el-menu-item index="/dashboard">
-            <el-icon><Odometer /></el-icon>
-            <template #title>控制台</template>
-          </el-menu-item>
-
           <!-- 动态菜单 -->
           <template v-for="menu in menuList" :key="menu.id">
             <!-- 有子菜单的情况 -->

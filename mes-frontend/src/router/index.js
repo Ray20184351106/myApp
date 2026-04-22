@@ -54,6 +54,12 @@ export const dynamicRoutes = [
             name: 'SystemMenu',
             component: () => import('../views/system/Menu.vue'),
             meta: { title: '菜单管理', icon: 'Menu', perms: 'system:menu:list' }
+          },
+          {
+            path: 'dept',
+            name: 'SystemDept',
+            component: () => import('../views/system/Dept.vue'),
+            meta: { title: '部门管理', icon: 'OfficeBuilding', perms: 'system:dept:list' }
           }
         ]
       }

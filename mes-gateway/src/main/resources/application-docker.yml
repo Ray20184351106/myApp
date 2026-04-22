@@ -6,15 +6,47 @@ spring:
   cloud:
     gateway:
       routes:
-        # 认证服务 - Docker网络 (包含用户管理接口)
-        - id: mes-auth
+        # 认证服务 - 部门管理
+        - id: mes-auth-dept
           uri: http://mes-auth:9001
           predicates:
-            - Path=/api/auth/**,/api/system/user/**
+            - Path=/api/system/dept/**
           filters:
             - StripPrefix=1
 
-        # 系统服务 - Docker网络 (排除用户管理)
+        # 认证服务 - 用户管理
+        - id: mes-auth-user
+          uri: http://mes-auth:9001
+          predicates:
+            - Path=/api/system/user/**
+          filters:
+            - StripPrefix=1
+
+        # 认证服务 - 角色管理
+        - id: mes-auth-role
+          uri: http://mes-auth:9001
+          predicates:
+            - Path=/api/system/role/**
+          filters:
+            - StripPrefix=1
+
+        # 认证服务 - 菜单管理
+        - id: mes-auth-menu
+          uri: http://mes-auth:9001
+          predicates:
+            - Path=/api/system/menu/**
+          filters:
+            - StripPrefix=1
+
+        # 认证服务 - 认证接口
+        - id: mes-auth-auth
+          uri: http://mes-auth:9001
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # 系统服务 - Docker网络
         - id: mes-system
           uri: http://mes-system:9002
           predicates:
