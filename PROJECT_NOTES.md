@@ -1,6 +1,6 @@
 # MES 制造执行系统 - 项目开发笔记
 
-> 最后更新：2026-03-27
+> 最后更新：2026-04-22
 
 ---
 
@@ -150,15 +150,27 @@ mes/
 - [x] Redis Token 存储
 - [x] 用户登录/登出接口
 - [x] 用户管理 CRUD 接口
+- [x] 角色管理 CRUD 接口
+- [x] 菜单管理 CRUD 接口
+- [x] 用户角色关联接口
+- [x] 角色菜单授权接口
+- [x] 权限校验注解和切面 (@RequiresPermissions, @RequiresRoles)
+- [x] 动态菜单路由接口
 - [x] MyBatis-Plus 分页配置
 
 #### 前端功能
 - [x] Vue 3 项目框架
 - [x] Element Plus UI 集成
 - [x] 登录页面
-- [x] 用户管理页面 (列表、新增、编辑、删除)
+- [x] 用户管理页面 (列表、新增、编辑、删除、分配角色)
+- [x] 角色管理页面 (列表、新增、编辑、删除、菜单授权)
+- [x] 菜单管理页面 (树形列表、新增、编辑、删除)
+- [x] 动态菜单加载 (从后端获取)
+- [x] 权限控制指令 (v-permission, v-role)
+- [x] 登录过期自动跳转
 - [x] Axios 请求封装
 - [x] 多环境配置支持
+- [x] Pinia 状态管理
 
 #### 基础设施
 - [x] Docker Compose 配置
@@ -169,12 +181,11 @@ mes/
 ### 4.2 待开发功能 🚧
 
 #### 系统管理
-- [ ] 角色管理
-- [ ] 菜单管理
 - [ ] 部门管理
 - [ ] 字典管理
 - [ ] 配置管理
 - [ ] 操作日志
+- [ ] 在线用户监控
 
 #### MES 核心业务
 - [ ] 工单管理
@@ -184,10 +195,9 @@ mes/
 - [ ] 数据采集
 
 #### 前端功能
-- [ ] 仪表盘
-- [ ] 动态路由
-- [ ] 权限控制
+- [ ] 仪表盘数据展示
 - [ ] 多标签页
+- [ ] 个人中心页面
 
 ---
 
@@ -256,7 +266,8 @@ docker-compose logs -f mes-auth
 | POST | /login | 用户登录 |
 | POST | /register | 用户注册 |
 | POST | /logout | 用户登出 |
-| GET | /info | 获取用户信息 |
+| GET | /getInfo | 获取用户信息（含权限、角色） |
+| GET | /getRouters | 获取用户菜单路由 |
 
 ### 7.2 用户接口 (/api/system/user)
 
@@ -267,6 +278,32 @@ docker-compose logs -f mes-auth
 | POST | / | 新增用户 |
 | PUT | / | 修改用户 |
 | DELETE | /{id} | 删除用户 |
+| GET | /{id}/roles | 获取用户角色列表 |
+| PUT | /roles | 分配角色给用户 |
+
+### 7.3 角色接口 (/api/system/role)
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /list | 分页查询角色 |
+| GET | /all | 获取所有角色 |
+| GET | /{id} | 获取角色详情 |
+| POST | / | 新增角色 |
+| PUT | / | 修改角色 |
+| DELETE | /{id} | 删除角色 |
+| GET | /{id}/menus | 获取角色菜单列表 |
+| PUT | /menus | 分配菜单给角色 |
+
+### 7.4 菜单接口 (/api/system/menu)
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /list | 获取菜单列表 |
+| GET | /tree | 获取菜单树 |
+| GET | /{id} | 获取菜单详情 |
+| POST | / | 新增菜单 |
+| PUT | / | 修改菜单 |
+| DELETE | /{id} | 删除菜单 |
 
 ---
 
@@ -363,7 +400,62 @@ mysql -u root -pmysql -e "SELECT * FROM mes_system.sys_user;"
 
 ---
 
-## 十二、Git 提交规范
+## 十二、权限控制
+
+### 12.1 权限标识规范
+
+权限标识格式：`模块:资源:操作`
+
+| 模块 | 权限标识 | 说明 |
+|------|----------|------|
+| 用户管理 | system:user:list | 查看用户列表 |
+| 用户管理 | system:user:query | 查询用户详情 |
+| 用户管理 | system:user:add | 新增用户 |
+| 用户管理 | system:user:edit | 编辑用户 |
+| 用户管理 | system:user:remove | 删除用户 |
+| 角色管理 | system:role:list | 查看角色列表 |
+| 角色管理 | system:role:add | 新增角色 |
+| 角色管理 | system:role:edit | 编辑角色 |
+| 角色管理 | system:role:remove | 删除角色 |
+| 菜单管理 | system:menu:list | 查看菜单列表 |
+| 菜单管理 | system:menu:add | 新增菜单 |
+| 菜单管理 | system:menu:edit | 编辑菜单 |
+| 菜单管理 | system:menu:remove | 删除菜单 |
+
+### 12.2 后端权限注解
+
+```java
+// 单个权限
+@RequiresPermissions("system:user:add")
+public Result<Void> add(@RequestBody User user) { ... }
+
+// 多个权限（AND关系）
+@RequiresPermissions(value = {"system:user:add", "system:user:edit"}, logical = Logical.AND)
+
+// 多个权限（OR关系）
+@RequiresPermissions(value = {"system:user:add", "system:user:edit"}, logical = Logical.OR)
+
+// 角色校验
+@RequiresRoles("admin")
+```
+
+### 12.3 前端权限指令
+
+```vue
+<!-- 单个权限 -->
+<el-button v-permission="'system:user:add'">新增</el-button>
+
+<!-- 多个权限 -->
+<el-button v-permission="['system:user:add', 'system:user:edit']">操作</el-button>
+```
+
+### 12.4 超级管理员
+
+拥有 `*:*:*` 权限或 `admin` 角色的用户自动拥有所有权限。
+
+---
+
+## 十三、Git 提交规范
 
 使用 Conventional Commits 规范：
 
