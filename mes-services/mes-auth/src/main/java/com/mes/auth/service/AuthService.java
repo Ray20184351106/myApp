@@ -3,6 +3,7 @@ package com.mes.auth.service;
 import com.mes.auth.entity.LoginBody;
 import com.mes.auth.entity.RegisterBody;
 import com.mes.auth.entity.SellerUser;
+import com.mes.auth.entity.SysMenu;
 import com.mes.auth.mapper.SellerUserMapper;
 import com.mes.common.core.result.Result;
 import com.mes.common.redis.service.RedisService;
@@ -12,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,6 +30,9 @@ public class AuthService {
 
     @Autowired
     private RedisService redisService;
+
+    @Autowired
+    private PermissionService permissionService;
 
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -57,6 +61,12 @@ public class AuthService {
         loginUser.setUsername(user.getUsername());
         loginUser.setNickname(user.getNickname());
         loginUser.setAvatar(user.getAvatar());
+
+        // 加载用户权限和角色
+        Set<String> permissions = permissionService.selectPermsByUserId(user.getId());
+        Set<String> roles = permissionService.selectRoleKeysByUserId(user.getId());
+        loginUser.setPermissions(permissions);
+        loginUser.setRoles(roles);
 
         // 生成 Token
         String token = tokenService.createToken(loginUser);

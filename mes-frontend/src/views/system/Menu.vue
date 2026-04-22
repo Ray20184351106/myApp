@@ -11,7 +11,7 @@
           <el-icon><Sort /></el-icon>
           {{ isExpandAll ? '折叠全部' : '展开全部' }}
         </el-button>
-        <el-button type="primary" @click="handleAdd(null)" class="add-btn">
+        <el-button type="primary" @click="handleAdd(null)" class="add-btn" v-permission="'system:menu:add'">
           <el-icon><Plus /></el-icon>
           新增菜单
         </el-button>
@@ -75,7 +75,7 @@
         <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button type="primary" text size="small" @click="handleEdit(row)">
+              <el-button type="primary" text size="small" @click="handleEdit(row)" v-permission="'system:menu:edit'">
                 <el-icon><Edit /></el-icon>
               </el-button>
               <el-button
@@ -84,10 +84,11 @@
                 size="small"
                 @click="handleAdd(row)"
                 v-if="row.menuType !== 'F'"
+                v-permission="'system:menu:add'"
               >
                 <el-icon><Plus /></el-icon>
               </el-button>
-              <el-button type="danger" text size="small" @click="handleDelete(row)">
+              <el-button type="danger" text size="small" @click="handleDelete(row)" v-permission="'system:menu:remove'">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>

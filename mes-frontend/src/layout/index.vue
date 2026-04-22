@@ -36,15 +36,15 @@
               <el-icon><Setting /></el-icon>
               <span>系统管理</span>
             </template>
-            <el-menu-item index="/system/user">
+            <el-menu-item index="/system/user" v-if="hasPermission('system:user:list')">
               <el-icon><User /></el-icon>
               <span>用户管理</span>
             </el-menu-item>
-            <el-menu-item index="/system/role">
+            <el-menu-item index="/system/role" v-if="hasPermission('system:role:list')">
               <el-icon><UserFilled /></el-icon>
               <span>角色管理</span>
             </el-menu-item>
-            <el-menu-item index="/system/menu">
+            <el-menu-item index="/system/menu" v-if="hasPermission('system:menu:list')">
               <el-icon><Menu /></el-icon>
               <span>菜单管理</span>
             </el-menu-item>
@@ -83,8 +83,8 @@
                   <el-icon :size="20"><User /></el-icon>
                 </el-avatar>
                 <div class="user-detail">
-                  <span class="user-name">管理员</span>
-                  <span class="user-role">超级管理员</span>
+                  <span class="user-name">{{ userName }}</span>
+                  <span class="user-role">{{ userRole }}</span>
                 </div>
                 <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
               </div>
@@ -126,8 +126,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
 import {
   Odometer, Setting, User, UserFilled, Menu,
   Fold, Expand, Location, Bell, ArrowDown, SwitchButton
@@ -135,9 +136,63 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 const isCollapse = ref(false)
 
 const activeMenu = computed(() => route.path)
+
+// 用户信息
+const userName = computed(() => userStore.userInfo?.nickname || userStore.userInfo?.username || '用户')
+const userRole = computed(() => {
+  const roles = userStore.roles
+  if (roles.includes('admin') || roles.includes('superadmin')) {
+    return '超级管理员'
+  }
+  return roles[0] || '普通用户'
+})
+
+// 菜单数据
+const menuItems = [
+  {
+    index: '/dashboard',
+    icon: Odometer,
+    title: '控制台'
+  },
+  {
+    index: 'system',
+    icon: Setting,
+    title: '系统管理',
+    children: [
+      { index: '/system/user', icon: User, title: '用户管理', perm: 'system:user:list' },
+      { index: '/system/role', icon: UserFilled, title: '角色管理', perm: 'system:role:list' },
+      { index: '/system/menu', icon: Menu, title: '菜单管理', perm: 'system:menu:list' }
+    ]
+  }
+]
+
+// 检查权限
+const hasPermission = (perm) => {
+  if (!perm) return true
+  const permissions = userStore.permissions
+  if (permissions.includes('*:*:*')) return true
+  return permissions.includes(perm)
+}
+
+// 过滤有权限的菜单
+const filteredMenuItems = computed(() => {
+  return menuItems.map(item => {
+    if (item.children) {
+      const children = item.children.filter(child => hasPermission(child.perm))
+      return { ...item, children }
+    }
+    return item
+  }).filter(item => {
+    if (item.children) {
+      return item.children.length > 0
+    }
+    return true
+  })
+})
 
 const currentPageTitle = computed(() => {
   const titleMap = {
@@ -149,12 +204,19 @@ const currentPageTitle = computed(() => {
   return titleMap[route.path] || '控制台'
 })
 
-const handleCommand = (command) => {
+const handleCommand = async (command) => {
   if (command === 'logout') {
-    localStorage.removeItem('token')
+    await userStore.logout()
     router.push('/login')
   }
 }
+
+onMounted(async () => {
+  // 获取用户信息
+  if (!userStore.userInfo) {
+    await userStore.getUserInfo()
+  }
+})
 </script>
 
 <style scoped>

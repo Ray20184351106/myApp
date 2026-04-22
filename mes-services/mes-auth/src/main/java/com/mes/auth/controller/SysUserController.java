@@ -6,6 +6,7 @@ import com.mes.auth.entity.SellerUser;
 import com.mes.auth.mapper.SellerUserMapper;
 import com.mes.common.core.result.PageResult;
 import com.mes.common.core.result.Result;
+import com.mes.common.security.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.StringUtils;
@@ -30,6 +31,7 @@ public class SysUserController {
      * 分页查询用户
      */
     @GetMapping("/list")
+    @RequiresPermissions("system:user:list")
     public Result<PageResult<SellerUser>> list(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
@@ -52,6 +54,7 @@ public class SysUserController {
      * 根据ID获取用户
      */
     @GetMapping("/{id}")
+    @RequiresPermissions("system:user:query")
     public Result<SellerUser> getInfo(@PathVariable Long id) {
         SellerUser user = userMapper.selectById(id);
         if (user != null) {
@@ -64,6 +67,7 @@ public class SysUserController {
      * 新增用户
      */
     @PostMapping
+    @RequiresPermissions("system:user:add")
     public Result<Void> add(@RequestBody SellerUser user) {
         // 检查用户名是否存在
         SellerUser existUser = userMapper.selectByUsername(user.getUsername());
@@ -92,6 +96,7 @@ public class SysUserController {
      * 修改用户
      */
     @PutMapping
+    @RequiresPermissions("system:user:edit")
     public Result<Void> edit(@RequestBody SellerUser user) {
         SellerUser existUser = userMapper.selectById(user.getId());
         if (existUser == null) {
@@ -114,6 +119,7 @@ public class SysUserController {
      * 删除用户 (逻辑删除)
      */
     @DeleteMapping("/{id}")
+    @RequiresPermissions("system:user:remove")
     public Result<Void> remove(@PathVariable Long id) {
         SellerUser user = new SellerUser();
         user.setId(id);

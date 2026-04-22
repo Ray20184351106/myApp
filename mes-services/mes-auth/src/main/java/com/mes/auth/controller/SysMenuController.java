@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mes.auth.entity.SysMenu;
 import com.mes.auth.mapper.SysMenuMapper;
 import com.mes.common.core.result.Result;
+import com.mes.common.security.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +26,7 @@ public class SysMenuController {
      * 菜单列表
      */
     @GetMapping("/list")
+    @RequiresPermissions("system:menu:list")
     public Result<List<SysMenu>> list() {
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysMenu::getStatus, 1);
@@ -37,6 +39,7 @@ public class SysMenuController {
      * 菜单树（角色授权用）
      */
     @GetMapping("/tree")
+    @RequiresPermissions("system:menu:list")
     public Result<List<SysMenu>> tree() {
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysMenu::getStatus, 1);
@@ -49,6 +52,7 @@ public class SysMenuController {
      * 根据ID获取菜单
      */
     @GetMapping("/{id}")
+    @RequiresPermissions("system:menu:query")
     public Result<SysMenu> getInfo(@PathVariable Long id) {
         return Result.success(menuMapper.selectById(id));
     }
@@ -57,6 +61,7 @@ public class SysMenuController {
      * 新增菜单
      */
     @PostMapping
+    @RequiresPermissions("system:menu:add")
     public Result<Void> add(@RequestBody SysMenu menu) {
         menu.setStatus(1);
         menu.setVisible(1);
@@ -70,6 +75,7 @@ public class SysMenuController {
      * 修改菜单
      */
     @PutMapping
+    @RequiresPermissions("system:menu:edit")
     public Result<Void> edit(@RequestBody SysMenu menu) {
         menu.setUpdateTime(LocalDateTime.now());
         menuMapper.updateById(menu);
@@ -80,6 +86,7 @@ public class SysMenuController {
      * 删除菜单
      */
     @DeleteMapping("/{id}")
+    @RequiresPermissions("system:menu:remove")
     public Result<Void> remove(@PathVariable Long id) {
         menuMapper.deleteById(id);
         return Result.success();

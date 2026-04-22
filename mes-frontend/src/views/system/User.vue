@@ -7,7 +7,7 @@
         <p class="page-desc">管理系统用户账户、权限及状态</p>
       </div>
       <div class="header-actions">
-        <el-button type="primary" @click="handleAdd" class="add-btn">
+        <el-button type="primary" @click="handleAdd" class="add-btn" v-permission="'system:user:add'">
           <el-icon><Plus /></el-icon>
           新增用户
         </el-button>
@@ -108,10 +108,10 @@
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button type="primary" text size="small" @click="handleEdit(row)" title="编辑">
+              <el-button type="primary" text size="small" @click="handleEdit(row)" title="编辑" v-permission="'system:user:edit'">
                 <el-icon><Edit /></el-icon>
               </el-button>
-              <el-button type="success" text size="small" @click="handleAssignRole(row)" title="分配角色">
+              <el-button type="success" text size="small" @click="handleAssignRole(row)" title="分配角色" v-permission="'system:user:edit'">
                 <el-icon><UserFilled /></el-icon>
               </el-button>
               <el-button
@@ -120,13 +120,14 @@
                 size="small"
                 @click="handleToggleStatus(row)"
                 :title="row.status === 1 ? '禁用' : '启用'"
+                v-permission="'system:user:edit'"
               >
                 <el-icon>
                   <CircleClose v-if="row.status === 1" />
                   <CircleCheck v-else />
                 </el-icon>
               </el-button>
-              <el-button type="danger" text size="small" @click="handleDelete(row)" title="删除">
+              <el-button type="danger" text size="small" @click="handleDelete(row)" title="删除" v-permission="'system:user:remove'">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>

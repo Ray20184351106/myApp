@@ -7,7 +7,7 @@
         <p class="page-desc">管理系统角色及菜单权限分配</p>
       </div>
       <div class="header-actions">
-        <el-button type="primary" @click="handleAdd" class="add-btn">
+        <el-button type="primary" @click="handleAdd" class="add-btn" v-permission="'system:role:add'">
           <el-icon><Plus /></el-icon>
           新增角色
         </el-button>
@@ -79,13 +79,13 @@
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button type="primary" text size="small" @click="handleEdit(row)">
+              <el-button type="primary" text size="small" @click="handleEdit(row)" v-permission="'system:role:edit'">
                 <el-icon><Edit /></el-icon>
               </el-button>
-              <el-button type="success" text size="small" @click="handleAssignMenu(row)">
+              <el-button type="success" text size="small" @click="handleAssignMenu(row)" v-permission="'system:role:edit'">
                 <el-icon><Key /></el-icon>
               </el-button>
-              <el-button type="danger" text size="small" @click="handleDelete(row)">
+              <el-button type="danger" text size="small" @click="handleDelete(row)" v-permission="'system:role:remove'">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>

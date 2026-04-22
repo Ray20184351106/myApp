@@ -6,6 +6,7 @@ import com.mes.auth.entity.SysRole;
 import com.mes.auth.mapper.SysRoleMapper;
 import com.mes.common.core.result.PageResult;
 import com.mes.common.core.result.Result;
+import com.mes.common.security.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ public class SysRoleController {
      * 分页查询角色
      */
     @GetMapping("/list")
+    @RequiresPermissions("system:role:list")
     public Result<PageResult<SysRole>> list(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
@@ -57,6 +59,7 @@ public class SysRoleController {
      * 根据ID获取角色
      */
     @GetMapping("/{id}")
+    @RequiresPermissions("system:role:query")
     public Result<SysRole> getInfo(@PathVariable Long id) {
         return Result.success(roleMapper.selectById(id));
     }
@@ -65,6 +68,7 @@ public class SysRoleController {
      * 新增角色
      */
     @PostMapping
+    @RequiresPermissions("system:role:add")
     public Result<Void> add(@RequestBody SysRole role) {
         role.setDeleted(0);
         role.setStatus(1);
@@ -78,6 +82,7 @@ public class SysRoleController {
      * 修改角色
      */
     @PutMapping
+    @RequiresPermissions("system:role:edit")
     public Result<Void> edit(@RequestBody SysRole role) {
         role.setUpdateTime(LocalDateTime.now());
         roleMapper.updateById(role);
@@ -88,6 +93,7 @@ public class SysRoleController {
      * 删除角色
      */
     @DeleteMapping("/{id}")
+    @RequiresPermissions("system:role:remove")
     public Result<Void> remove(@PathVariable Long id) {
         SysRole role = new SysRole();
         role.setId(id);
