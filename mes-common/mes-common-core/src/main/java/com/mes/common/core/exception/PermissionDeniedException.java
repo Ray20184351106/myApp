@@ -1,4 +1,4 @@
-package com.mes.common.security.exception;
+package com.mes.common.core.exception;
 
 /**
  * 权限拒绝异常

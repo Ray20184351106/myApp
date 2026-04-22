@@ -4,7 +4,7 @@ import com.mes.common.security.annotation.Logical;
 import com.mes.common.security.annotation.RequiresPermissions;
 import com.mes.common.security.annotation.RequiresRoles;
 import com.mes.common.security.entity.LoginUser;
-import com.mes.common.security.exception.PermissionDeniedException;
+import com.mes.common.core.exception.PermissionDeniedException;
 import com.mes.common.security.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;

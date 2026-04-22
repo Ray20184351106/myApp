@@ -14,6 +14,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /** 权限拒绝异常 */
+    @ExceptionHandler(PermissionDeniedException.class)
+    public Result<Void> handlePermissionDeniedException(PermissionDeniedException e) {
+        log.error(e.getMessage(), e);
+        return Result.error(403, e.getMessage());
+    }
+
     /** 业务异常 */
     @ExceptionHandler(ServiceException.class)
     public Result<Void> handleServiceException(ServiceException e) {
